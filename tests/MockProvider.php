@@ -7,6 +7,7 @@
 namespace Tebru\Gson\Test;
 
 use DateTime;
+use DateTimeInterface;
 use Doctrine\Common\Annotations\AnnotationReader;
 use Psr\SimpleCache\CacheInterface;
 use Tebru\AnnotationReader\AnnotationReaderAdapter;
@@ -28,6 +29,8 @@ use Tebru\Gson\Internal\Naming\PropertyNamer;
 use Tebru\Gson\Internal\Naming\UpperCaseMethodNamingStrategy;
 use Tebru\Gson\Internal\TypeAdapterProvider;
 use Tebru\Gson\Internal\TypeTokenFactory;
+use Tebru\Gson\JsonDeserializationContext;
+use Tebru\Gson\JsonSerializationContext;
 use Tebru\Gson\PropertyNamingPolicy;
 use Tebru\Gson\TypeAdapter\BooleanTypeAdapter;
 use Tebru\Gson\TypeAdapter\Factory\ArrayTypeAdapterFactory;
@@ -128,7 +131,7 @@ class MockProvider
                 $factories,
                 $scalarTypeAdapters,
                 [
-                    new DateTimeTypeAdapterFactory(DateTime::ATOM),
+                    new DateTimeTypeAdapterFactory(DateTimeInterface::ATOM),
                     new ArrayTypeAdapterFactory(false),
                     $reflectionTypeAdapterFactory,
                     new WildcardTypeAdapterFactory(),
@@ -138,12 +141,12 @@ class MockProvider
         );
     }
 
-    public static function deserializationContext(Excluder $excluder)
+    public static function deserializationContext(Excluder $excluder) : JsonDeserializationContext
     {
         return new DefaultJsonDeserializationContext(self::typeAdapterProvider($excluder), new ReaderContext());
     }
 
-    public static function serializationContext(Excluder $excluder)
+    public static function serializationContext(Excluder $excluder) : JsonSerializationContext
     {
         return new DefaultJsonSerializationContext(self::typeAdapterProvider($excluder), new WriterContext());
     }

@@ -20,9 +20,9 @@ class DateTimeMock extends DateTime
         return new static($dateTime->format(DateTime::ATOM), $dateTime->getTimezone());
     }
 
-    public static function createFromFormat ($format, $time, $timezone = null)
+    public static function createFromFormat ($format, $datetime, $timezone = null)
     {
-        $dateTime = parent::createFromFormat($format, $time, $timezone);
+        $dateTime = parent::createFromFormat($format, $datetime, $timezone);
 
         return self::create($dateTime);
     }
