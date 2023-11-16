@@ -6,7 +6,9 @@
 
 namespace Tebru\Gson\Test\Mock;
 
+use AllowDynamicProperties;
 use DateTime;
+use stdClass;
 use Tebru\Gson\Annotation as Gson;
 use Tebru\Gson\Annotation\Accessor;
 use Tebru\Gson\Annotation\Exclude;
@@ -24,6 +26,7 @@ use Tebru\Gson\Annotation\VirtualProperty;
  * @author Nate Brunette <n@tebru.net>
  * @Expose()
  */
+#[AllowDynamicProperties]
 class GsonMock
 {
     private $integer;

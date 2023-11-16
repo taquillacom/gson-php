@@ -163,7 +163,13 @@ class ArrayTypeAdapter extends TypeAdapter
             throw new LogicException('Array may not have more than 2 generic types');
         }
 
-        $arrayIsObject = $this->numberOfGenerics === 2 || is_string(key($value));
+        if (is_object($value)) {
+            $key = key(get_mangled_object_vars($value));
+        }
+        else {
+            $key = key($value);
+        }
+        $arrayIsObject = $this->numberOfGenerics === 2 || is_string($key);
         $enableScalarAdapters = $context->enableScalarAdapters();
         $serializeNull = $context->serializeNull();
         $result = [];

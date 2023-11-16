@@ -6,11 +6,14 @@
 
 namespace Tebru\Gson\Test\Mock;
 
+use AllowDynamicProperties;
+
 /**
  * Class GsonObjectMock
  *
  * @author Nate Brunette <n@tebru.net>
  */
+#[AllowDynamicProperties]
 class GsonObjectMock implements GsonObjectMockable
 {
     private $foo;

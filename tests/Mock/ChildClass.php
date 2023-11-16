@@ -6,6 +6,7 @@
 
 namespace Tebru\Gson\Test\Mock;
 
+use AllowDynamicProperties;
 use Tebru\Gson\Annotation as Gson;
 use Tebru\Gson\Annotation\SerializedName;
 use Tebru\Gson\Annotation\VirtualProperty;
@@ -21,6 +22,7 @@ use Tebru\Gson\Test\Mock\Annotation\FooAnnotation;
  * @FooAnnotation("foo3")
  * @BazAnnotation("baz")
  */
+#[AllowDynamicProperties]
 class ChildClass extends ChildClassParent
 {
     /**
