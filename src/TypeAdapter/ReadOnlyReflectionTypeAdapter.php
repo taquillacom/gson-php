@@ -47,7 +47,33 @@ class ReadOnlyReflectionTypeAdapter extends ReflectionTypeAdapter {
             return null;
         }
 
-        $object = $this->objectConstructor->construct($value);
+        $propertyValues = [];
+        $enableScalarAdapters = $context->enableScalarAdapters();
+        foreach ($value as $name => $item) {
+            $property = $this->propertyCache[$name] ?? ($this->propertyCache[$name] = ($this->properties->elements[$name] ?? null));
+
+            if ($property === null || $property->skipDeserialize) {
+                continue;
+            }
+
+            $checkProperty = $this->hasPropertyDeserializationStrategies
+                             && (!$this->requireExclusionCheck || ($this->requireExclusionCheck && $property->annotations->get(ExclusionCheck::class) !== null));
+            if ($checkProperty && $this->excluder->excludePropertyByDeserializationStrategy($property)) {
+                continue;
+            }
+
+            if (!$enableScalarAdapters && $property->isScalar) {
+                $propertyValues[$name] = $item;
+                continue;
+            }
+
+            $adapter = $this->adapters[$name] ?? $this->getAdapter($property);
+
+            $propertyValues[$name] = $adapter->read($item, $context);
+        }
+
+
+        $object = $this->objectConstructor->construct($propertyValues);
         $classExclusionCheck = $this->hasClassDeserializationStrategies
             && (!$this->requireExclusionCheck || ($this->requireExclusionCheck && $this->classAnnotations->get(ExclusionCheck::class) !== null));
         $propertyExclusionCheck = $this->hasPropertyDeserializationStrategies
