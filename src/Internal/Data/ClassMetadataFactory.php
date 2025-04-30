@@ -122,10 +122,12 @@ final class ClassMetadataFactory
             return $data;
         }
 
-        $properties = new PropertyCollection();
-        $classMetadata = new DefaultClassMetadata($class, $this->annotationReader->readClass($class, true), $properties);
-
         $reflectionClass = new ReflectionClass($class);
+        $isReadOnlyClass = $reflectionClass->isReadOnly();
+
+        $properties = new PropertyCollection();
+        $classMetadata = new DefaultClassMetadata($class, $this->annotationReader->readClass($class, true), $properties, $isReadOnlyClass);
+
         $reflectionProperties = $this->reflectionPropertySetFactory->create($reflectionClass);
 
         /** @var ReflectionProperty $reflectionProperty */

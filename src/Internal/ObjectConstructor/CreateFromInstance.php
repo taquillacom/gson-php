@@ -39,7 +39,7 @@ final class CreateFromInstance implements ObjectConstructor
      *
      * @return object
      */
-    public function construct()
+    public function construct($values = [])
     {
         return $this->object;
     }

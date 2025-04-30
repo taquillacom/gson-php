@@ -10,6 +10,7 @@ use Tebru\Gson\Context\ReaderContext;
 use Tebru\Gson\Internal\Excluder;
 use Tebru\Gson\Internal\ObjectConstructor\CreateFromInstance;
 use Tebru\Gson\Internal\TypeAdapterProvider;
+use Tebru\Gson\Test\Mock\ReadOnlyObject;
 use Tebru\Gson\TypeAdapter\ReflectionTypeAdapter;
 use Tebru\Gson\Test\Mock\AddressMock;
 use Tebru\Gson\Test\Mock\ExclusionStrategies\UserEmailExclusionStrategy;
@@ -99,6 +100,20 @@ class ReflectionTypeAdapterTest extends TypeAdapterTestCase
         self::assertSame('My City', $address->getCity());
         self::assertSame('MN', $address->getState());
         self::assertSame(12345, $address->getZip());
+    }
+
+    public function testDeserializeReadOnly(): void
+    {
+        /** @var ReflectionTypeAdapter $adapter */
+        $adapter = $this->typeAdapterProvider->getAdapter(new TypeToken(ReadOnlyObject::class));
+        /** @var ReadOnlyObject $object */
+        $object = $adapter->read(json_decode('
+            {
+                "foo": "bar"
+            }
+        ', true), $this->readerContext);
+        $foo = $object->foo;
+        self::assertSame('bar', $foo);
     }
 
     public function testDeserializeWithoutScalarTypeAdapters(): void

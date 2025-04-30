@@ -28,138 +28,12 @@ use Tebru\Gson\TypeAdapter;
 use TypeError;
 
 /**
- * Class ReflectionTypeAdapter
+ * Class ReadOnlyReflectionTypeAdapter
  *
- * Uses reflected class properties to read/write object
+ * Uses reflected class properties to write object and constructor to read object.
  *
- * @author Nate Brunette <n@tebru.net>
  */
-class ReflectionTypeAdapter extends TypeAdapter implements ObjectConstructorAware
-{
-    use ObjectConstructorAwareTrait;
-
-    /**
-     * @var PropertyCollection
-     */
-    protected $properties;
-
-    /**
-     * @var DefaultClassMetadata
-     */
-    protected $classMetadata;
-
-    /**
-     * @var AnnotationCollection
-     */
-    protected $classAnnotations;
-
-    /**
-     * @var Excluder
-     */
-    protected $excluder;
-
-    /**
-     * @var TypeAdapterProvider
-     */
-    protected $typeAdapterProvider;
-
-    /**
-     * @var null|string
-     */
-    protected $classVirtualProperty;
-
-    /**
-     * @var bool
-     */
-    protected $skipSerialize;
-
-    /**
-     * @var bool
-     */
-    protected $skipDeserialize;
-
-    /**
-     * @var bool
-     */
-    protected $hasClassSerializationStrategies;
-
-    /**
-     * @var bool
-     */
-    protected $hasPropertySerializationStrategies;
-
-    /**
-     * @var bool
-     */
-    protected $hasClassDeserializationStrategies;
-
-    /**
-     * @var bool
-     */
-    protected $hasPropertyDeserializationStrategies;
-
-    /**
-     * An memory cache of used type adapters
-     *
-     * @var TypeAdapter[]
-     */
-    protected $adapters = [];
-
-    /**
-     * A memory cache of read properties
-     *
-     * @var Property[]
-     */
-    protected $propertyCache = [];
-
-    /**
-     * @var bool
-     */
-    protected $requireExclusionCheck;
-
-    /**
-     * @var bool
-     */
-    protected $hasPropertyExclusionCheck;
-
-    /**
-     * Constructor
-     *
-     * @param ObjectConstructor $objectConstructor
-     * @param DefaultClassMetadata $classMetadata
-     * @param Excluder $excluder
-     * @param TypeAdapterProvider $typeAdapterProvider
-     * @param null|string $classVirtualProperty
-     * @param bool $requireExclusionCheck
-     * @param bool $hasPropertyExclusionCheck
-     */
-    public function __construct(
-        ObjectConstructor $objectConstructor,
-        DefaultClassMetadata $classMetadata,
-        Excluder $excluder,
-        TypeAdapterProvider $typeAdapterProvider,
-        ?string $classVirtualProperty,
-        bool $requireExclusionCheck,
-        bool $hasPropertyExclusionCheck
-    ) {
-        $this->objectConstructor = $objectConstructor;
-        $this->classMetadata = $classMetadata;
-        $this->excluder = $excluder;
-        $this->typeAdapterProvider = $typeAdapterProvider;
-        $this->classVirtualProperty = $classVirtualProperty;
-        $this->requireExclusionCheck = $requireExclusionCheck;
-        $this->hasPropertyExclusionCheck = $hasPropertyExclusionCheck;
-
-        $this->classAnnotations = $classMetadata->annotations;
-        $this->properties = $classMetadata->properties;
-        $this->skipSerialize = $classMetadata->skipSerialize;
-        $this->skipDeserialize = $classMetadata->skipDeserialize;
-        $this->hasClassSerializationStrategies = $this->excluder->hasClassSerializationStrategies();
-        $this->hasPropertySerializationStrategies = $this->excluder->hasPropertySerializationStrategies();
-        $this->hasClassDeserializationStrategies = $this->excluder->hasClassDeserializationStrategies();
-        $this->hasPropertyDeserializationStrategies = $this->excluder->hasPropertyDeserializationStrategies();
-    }
-
+class ReadOnlyReflectionTypeAdapter extends ReflectionTypeAdapter {
     /**
      * Read the next value, convert it to its type and return it
      *
@@ -196,46 +70,6 @@ class ReflectionTypeAdapter extends TypeAdapter implements ObjectConstructorAwar
 
         if ($this->classVirtualProperty !== null) {
             $value = array_shift($value);
-        }
-
-        $usesExisting = $context->usesExistingObject();
-        $enableScalarAdapters = $context->enableScalarAdapters();
-
-        foreach ($value as $name => $item) {
-            $property = $this->propertyCache[$name] ?? ($this->propertyCache[$name] = ($this->properties->elements[$name] ?? null));
-
-            if ($property === null || $property->skipDeserialize) {
-                continue;
-            }
-
-            $checkProperty = $this->hasPropertyDeserializationStrategies
-                && (!$this->requireExclusionCheck || ($this->requireExclusionCheck && $property->annotations->get(ExclusionCheck::class) !== null));
-            if ($checkProperty && $this->excluder->excludePropertyByDeserializationStrategy($property)) {
-                continue;
-            }
-
-            if (!$enableScalarAdapters && $property->isScalar) {
-                $property->setterStrategy->set($object, $item);
-                continue;
-            }
-
-            $adapter = $this->adapters[$name] ?? $this->getAdapter($property);
-            if ($usesExisting && $adapter instanceof ObjectConstructorAware) {
-                try {
-                    $nestedObject = $property->getterStrategy->get($object);
-                } /** @noinspection BadExceptionsProcessingInspection */ catch (TypeError $error) {
-                    // this may occur when attempting to get a nested object that doesn't exist and
-                    // the method return is not nullable. The type error only occurs because we are
-                    // may be calling the getter before data exists.
-                    $nestedObject = null;
-                }
-
-                if ($nestedObject !== null) {
-                    $adapter->setObjectConstructor(new CreateFromInstance($nestedObject));
-                }
-            }
-
-            $property->setterStrategy->set($object, $adapter->read($item, $context));
         }
 
         return $object;

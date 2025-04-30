@@ -54,6 +54,7 @@ final class DefaultClassMetadata implements ClassMetadata
      * @var bool
      */
     public $skipDeserialize = false;
+    private bool $isReadOnly;
 
     /**
      * Constructor
@@ -62,11 +63,12 @@ final class DefaultClassMetadata implements ClassMetadata
      * @param AnnotationCollection $annotations
      * @param PropertyCollection $properties
      */
-    public function __construct(string $name, AnnotationCollection $annotations, PropertyCollection $properties)
+    public function __construct(string $name, AnnotationCollection $annotations, PropertyCollection $properties, bool $isReadOnly = false)
     {
         $this->name = $name;
         $this->annotations = $annotations;
         $this->properties = $properties;
+        $this->isReadOnly = $isReadOnly;
     }
 
     /**
@@ -180,5 +182,9 @@ final class DefaultClassMetadata implements ClassMetadata
     public function setSkipDeserialize(bool $skipDeserialize): void
     {
         $this->skipDeserialize = $skipDeserialize;
+    }
+
+    public function isReadOnly(): bool {
+        return $this->isReadOnly;
     }
 }

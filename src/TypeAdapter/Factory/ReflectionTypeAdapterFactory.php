@@ -16,8 +16,10 @@ use Tebru\Gson\Internal\ConstructorConstructor;
 use Tebru\Gson\Internal\Data\ClassMetadataFactory;
 use Tebru\Gson\Internal\Data\Property;
 use Tebru\Gson\Internal\Excluder;
+use Tebru\Gson\Internal\ObjectConstructor\CreateFromReadOnlyReflectionClass;
 use Tebru\Gson\Internal\TypeAdapterProvider;
 use Tebru\Gson\TypeAdapter;
+use Tebru\Gson\TypeAdapter\ReadOnlyReflectionTypeAdapter;
 use Tebru\Gson\TypeAdapter\ReflectionTypeAdapter;
 use Tebru\Gson\TypeAdapterFactory;
 use Tebru\PhpType\TypeToken;
@@ -86,8 +88,7 @@ class ReflectionTypeAdapterFactory implements TypeAdapterFactory
      * @param TypeAdapterProvider $typeAdapterProvider
      * @return TypeAdapter|null
      */
-    public function create(TypeToken $type, TypeAdapterProvider $typeAdapterProvider): ?TypeAdapter
-    {
+    public function create(TypeToken $type, TypeAdapterProvider $typeAdapterProvider): ?TypeAdapter {
         if (!$type->phpType === TypeToken::OBJECT || !class_exists($type->rawType)) {
             return null;
         }
@@ -105,7 +106,6 @@ class ReflectionTypeAdapterFactory implements TypeAdapterFactory
             return $typeAdapterProvider->getAdapterFromAnnotation($type, $jsonAdapterAnnotation);
         }
 
-        $objectConstructor = $this->constructorConstructor->get($type);
         $classVirtualProperty = $classMetadata->annotations->get(VirtualProperty::class);
 
         $propertyExclusionCheck = false;
@@ -119,14 +119,25 @@ class ReflectionTypeAdapterFactory implements TypeAdapterFactory
             }
         }
 
-        return new ReflectionTypeAdapter(
-            $objectConstructor,
-            $classMetadata,
-            $this->excluder,
-            $typeAdapterProvider,
-            $classVirtualProperty ? $classVirtualProperty->getValue() : null,
-            $this->requireExclusionCheck,
-            $propertyExclusionCheck
-        );
+        if ($classMetadata->isReadOnly()) {
+            return new ReadOnlyReflectionTypeAdapter(new CreateFromReadOnlyReflectionClass($type->rawType),
+                $classMetadata,
+                $this->excluder,
+                $typeAdapterProvider,
+                $classVirtualProperty?->getValue(),
+                $this->requireExclusionCheck,
+                $propertyExclusionCheck);
+        } else {
+            $objectConstructor    = $this->constructorConstructor->get($type);
+            return new ReflectionTypeAdapter(
+                $objectConstructor,
+                $classMetadata,
+                $this->excluder,
+                $typeAdapterProvider,
+                $classVirtualProperty?->getValue(),
+                $this->requireExclusionCheck,
+                $propertyExclusionCheck
+            );
+        }
     }
 }

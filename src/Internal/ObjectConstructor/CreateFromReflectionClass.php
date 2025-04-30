@@ -9,7 +9,10 @@ declare(strict_types=1);
 namespace Tebru\Gson\Internal\ObjectConstructor;
 
 use ReflectionClass;
+use Tebru\Gson\Annotation\ExclusionCheck;
+use Tebru\Gson\Internal\Data\PropertyCollection;
 use Tebru\Gson\Internal\ObjectConstructor;
+use Tebru\Gson\Internal\ObjectConstructorAware;
 
 /**
  * Class CreateFromReflectionClass
@@ -41,7 +44,7 @@ final class CreateFromReflectionClass implements ObjectConstructor
      *
      * @return object
      */
-    public function construct()
+    public function construct($values = [])
     {
         $reflectionClass = new ReflectionClass($this->className);
 

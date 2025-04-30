@@ -23,5 +23,5 @@ interface ObjectConstructor
      *
      * @return mixed
      */
-    public function construct();
+    public function construct($values = []);
 }

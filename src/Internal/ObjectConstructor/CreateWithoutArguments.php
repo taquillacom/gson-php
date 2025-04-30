@@ -41,7 +41,7 @@ final class CreateWithoutArguments implements ObjectConstructor
      *
      * @return object
      */
-    public function construct()
+    public function construct($values = [])
     {
         return new $this->class();
     }
