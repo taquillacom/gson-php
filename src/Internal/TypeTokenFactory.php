@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace Tebru\Gson\Internal;
 
+use Doctrine\Common\Annotations\Annotation;
 use InvalidArgumentException;
 use phpDocumentor\Reflection\DocBlock\Tag;
 use phpDocumentor\Reflection\DocBlock\Tags\InvalidTag;
@@ -35,22 +36,9 @@ use Tebru\PhpType\TypeToken;
  */
 final class TypeTokenFactory
 {
-    /**
-     * @var DocBlockFactory
-     */
-    private $docBlockFactory;
+    private DocBlockFactory $docBlockFactory;
+    private ContextFactory $contextFactory;
 
-    /**
-     * @var ContextFactory
-     */
-    private $contextFactory;
-
-    /**
-     * Constructor
-     *
-     * @param null|DocBlockFactory $docBlockFactory
-     * @param null|ContextFactory $contextFactory
-     */
     public function __construct(?DocBlockFactory $docBlockFactory = null, ?ContextFactory $contextFactory = null)
     {
         $this->docBlockFactory = $docBlockFactory ?? DocBlockFactory::createInstance();
