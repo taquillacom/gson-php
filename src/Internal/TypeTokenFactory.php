@@ -79,7 +79,8 @@ final class TypeTokenFactory
         AnnotationCollection $annotations,
         ?ReflectionMethod $getterMethod = null,
         ?ReflectionMethod $setterMethod = null,
-        ?ReflectionProperty $property = null
+        ?ReflectionProperty $property = null,
+        ?ReflectionMethod $constructor = null
     ): TypeToken {
         /** @var Type $typeAnnotation */
         $typeAnnotation = $annotations->get(Type::class);
@@ -130,6 +131,25 @@ final class TypeTokenFactory
                 return $this->checkGenericArray($setterType, $property, $getterMethod, $setterMethod);
             }
         }
+
+        if ($property !== null && $constructor !== null) {
+            $parameters = $constructor->getParameters();
+            foreach ($parameters as $parameter) {
+                if ($parameter->name != $property->name) {
+                    continue;
+                }
+                if (!$parameter->isPromoted()) {
+                    continue;
+                }
+                $type = $parameter->getType();
+                if ($type === null) {
+                    continue;
+                }
+                $constructorType = TypeToken::create($type->getName());
+                return $this->checkGenericArray($constructorType, $property, $getterMethod, $setterMethod);
+            }
+        }
+
 
         return TypeToken::create(TypeToken::WILDCARD);
     }

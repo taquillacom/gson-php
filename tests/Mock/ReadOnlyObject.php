@@ -4,6 +4,7 @@ namespace Tebru\Gson\Test\Mock;
 
 readonly class ReadOnlyObject {
     public function __construct(
-        public string $foo
+        public string $foo,
+        public \DateTimeImmutable $at
     ) {}
 }
