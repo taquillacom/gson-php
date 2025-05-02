@@ -110,7 +110,7 @@ class ReflectionTypeAdapterTest extends TypeAdapterTestCase
         $object = $adapter->read(json_decode('
             {
                 "foo": "bar",
-                "at": "2019-01-01T00:00:00Z"
+                "expires_at": "2019-01-01T00:00:00Z"
             }
         ', true), $this->readerContext);
         $foo = $object->foo;
@@ -397,7 +397,7 @@ class ReflectionTypeAdapterTest extends TypeAdapterTestCase
 
         $expectedJson = '{
             "foo": "fubar",
-            "at": "2025-01-02T03:04:05+00:00"
+            "expires_at": "2025-01-02T03:04:05+00:00"
         }';
 
         self::assertJsonStringEqualsJsonString($expectedJson, json_encode($adapter->write($object, $this->writerContext)));

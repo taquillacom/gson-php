@@ -69,7 +69,7 @@ class ReadOnlyReflectionTypeAdapter extends ReflectionTypeAdapter {
 
             $adapter = $this->adapters[$name] ?? $this->getAdapter($property);
 
-            $propertyValues[$name] = $adapter->read($item, $context);
+            $propertyValues[$property->getName()] = $adapter->read($item, $context);
         }
 
 
