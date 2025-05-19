@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace Tebru\Gson\TypeAdapter;
 
+use Exception;
 use Tebru\AnnotationReader\AnnotationCollection;
 use Tebru\Gson\Annotation\ExclusionCheck;
 use Tebru\Gson\Annotation\JsonAdapter;
@@ -73,7 +74,12 @@ class ReadOnlyReflectionTypeAdapter extends ReflectionTypeAdapter {
         }
 
 
-        $object = $this->objectConstructor->construct($propertyValues);
+        try {
+            $object = $this->objectConstructor->construct($propertyValues);
+        }
+        catch (Exception $error) {
+            return null;
+        }
         $classExclusionCheck = $this->hasClassDeserializationStrategies
             && (!$this->requireExclusionCheck || ($this->requireExclusionCheck && $this->classAnnotations->get(ExclusionCheck::class) !== null));
         $propertyExclusionCheck = $this->hasPropertyDeserializationStrategies
