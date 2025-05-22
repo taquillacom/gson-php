@@ -250,67 +250,95 @@ class ReflectionTypeAdapter extends TypeAdapter implements ObjectConstructorAwar
      */
     public function write($value, WriterContext $context): ?array
     {
+        if ($value !== null && !is_scalar($value) && $context->isVisiting($value)) {
+            return null; // Or your chosen representation for a circular reference
+        }
+
         if ($this->skipSerialize || $value === null) {
             return null;
         }
 
-        $classExclusionCheck = $this->hasClassSerializationStrategies
-            && (!$this->requireExclusionCheck || ($this->requireExclusionCheck && $this->classAnnotations->get(ExclusionCheck::class) !== null));
-        $propertyExclusionCheck = $this->hasPropertySerializationStrategies
-            && (!$this->requireExclusionCheck || ($this->requireExclusionCheck && $this->hasPropertyExclusionCheck));
-        $exclusionData = $classExclusionCheck || $propertyExclusionCheck
-            ? new DefaultSerializationExclusionData($value, $context)
-            : null;
+        $result = []; 
 
-        if ($classExclusionCheck && $exclusionData) {
-            $this->excluder->applyClassSerializationExclusionData($exclusionData);
-
-            if ($this->excluder->excludeClassBySerializationStrategy($this->classMetadata)) {
-                return null;
-            }
+        // Ensure we only push/pop objects. $value is guaranteed not null here due to the check above.
+        if (!is_scalar($value)) { 
+            $context->pushVisiting($value);
         }
 
-        if ($propertyExclusionCheck && $exclusionData) {
-            $this->excluder->applyPropertySerializationExclusionData($exclusionData);
-        }
+        try {
+            // ... all existing logic for exclusion checks ...
+            $classExclusionCheck = $this->hasClassSerializationStrategies
+                && (!$this->requireExclusionCheck || ($this->requireExclusionCheck && $this->classAnnotations->get(ExclusionCheck::class) !== null));
+            $propertyExclusionCheck = $this->hasPropertySerializationStrategies
+                && (!$this->requireExclusionCheck || ($this->requireExclusionCheck && $this->hasPropertyExclusionCheck));
+            
+            // $value is guaranteed not null here.
+            $exclusionData = ($classExclusionCheck || $propertyExclusionCheck)
+                ? new DefaultSerializationExclusionData($value, $context)
+                : null;
 
-        $enableScalarAdapters = $context->enableScalarAdapters();
-        $serializeNull = $context->serializeNull();
-        $result = [];
-
-        /** @var Property $property */
-        foreach ($this->properties as $property) {
-            if ($property->skipSerialize) {
-                continue;
+            if ($classExclusionCheck && $exclusionData) {
+                $this->excluder->applyClassSerializationExclusionData($exclusionData);
+                if ($this->excluder->excludeClassBySerializationStrategy($this->classMetadata)) {
+                    // This early return is inside the try block, finally will be executed.
+                    return null; 
+                }
             }
 
-            $serializedName = $property->serializedName;
-            $checkProperty = $this->hasPropertySerializationStrategies
-                && (!$this->requireExclusionCheck || ($this->requireExclusionCheck && $property->annotations->get(ExclusionCheck::class) !== null));
-            if ($checkProperty && $this->excluder->excludePropertyBySerializationStrategy($property)) {
-                continue;
+            if ($propertyExclusionCheck && $exclusionData) {
+                $this->excluder->applyPropertySerializationExclusionData($exclusionData);
             }
 
-            if (!$enableScalarAdapters && $property->isScalar) {
-                $propertyValue = $property->getterStrategy->get($value);
+            // The original property iteration logic goes here.
+            $enableScalarAdapters = $context->enableScalarAdapters();
+            $serializeNull = $context->serializeNull();
+            // $result is already initialized
+
+            /** @var Property $property */
+            foreach ($this->properties as $property) {
+                if ($property->skipSerialize) {
+                    continue;
+                }
+
+                $serializedName = $property->serializedName;
+                $checkProperty = $this->hasPropertySerializationStrategies
+                    && (!$this->requireExclusionCheck || ($this->requireExclusionCheck && $property->annotations->get(ExclusionCheck::class) !== null));
+                if ($checkProperty && $this->excluder->excludePropertyBySerializationStrategy($property)) {
+                    continue;
+                }
+
+                if (!$enableScalarAdapters && $property->isScalar) {
+                    $propertyValue = $property->getterStrategy->get($value);
+                    if ($serializeNull || $propertyValue !== null) {
+                        $result[$serializedName] = $propertyValue;
+                    }
+                    continue;
+                }
+
+                $adapter = $this->adapters[$serializedName] ?? $this->getAdapter($property);
+                $propertyValue = $adapter->write($property->getterStrategy->get($value), $context);
                 if ($serializeNull || $propertyValue !== null) {
                     $result[$serializedName] = $propertyValue;
                 }
-                continue;
             }
 
-            $adapter = $this->adapters[$serializedName] ?? $this->getAdapter($property);
-            $propertyValue = $adapter->write($property->getterStrategy->get($value), $context);
-            if ($serializeNull || $propertyValue !== null) {
-                $result[$serializedName] = $propertyValue;
+            // Handling of empty results and virtual properties as per prompt point 3
+            if ($this->classVirtualProperty !== null && !empty($result)) { 
+                $result = [$this->classVirtualProperty => $result];
+            } elseif (empty($result) && $this->classVirtualProperty !== null) { 
+                 $result = [$this->classVirtualProperty => new \stdClass()];
+            } else if (empty($result)) { 
+                // This early return is inside the try block, finally will be executed.
+                return $serializeNull ? new \stdClass() : null;
+            }
+            
+            return $result; // Return the populated result
+        } finally {
+            // Ensure popVisiting is called for objects as per prompt point 3
+            if ($value !== null && !is_scalar($value)) {
+                $context->popVisiting($value);
             }
         }
-
-        if ($this->classVirtualProperty !== null) {
-            $result = [$this->classVirtualProperty => $result];
-        }
-
-        return $result;
     }
 
     /**
